@@ -340,6 +340,55 @@ class Flow(object):
         """
         return max(self.fcip_doc['packet_lengths'])
 
+    def min_packet_size(self):
+        """
+        Return the size of the smallest packet in the flow (in either direction)
+        """
+        return min(self.fcip_doc['packet_lengths'])
+
+    def avg_packet_size(self):
+        """
+        Return the size of the smallest packet in the flow (in either direction)
+        """
+        return sum(self.fcip_doc['packet_lengths'])/len(self.fcip_doc['packet_lengths'])
+
+    def avg_interpacket_interval(self):
+        """
+        Return the size of the average inter-packet time interval
+        in the flow (assessed per direction in flow).
+        .
+        Note: slightly inaccurate due to floating point rounding.
+        """
+     
+        avg_c2s = 0
+        avg_s2c = 0
+        count_c2s = 0
+        count_s2c = 0
+        prev_c2s_idx = 0
+        prev_s2c_idx = 0
+        for idx, direction in enumerate(self.fcip_doc['packet_directions']):
+            if direction == 'c2s':
+                count_c2s += 1
+                if count_c2s > 1:
+                    current_ts = self.fcip_doc['packet_timestamps'][idx]
+                    prev_ts = self.fcip_doc['packet_timestamps'][prev_c2s_idx]
+                    delta = current_ts - prev_ts
+                    avg_c2s += delta
+                    prev_c2s_idx = idx
+            elif direction == 's2c':
+                count_s2c += 1
+                if count_s2c > 1:
+                    current_ts = self.fcip_doc['packet_timestamps'][idx]
+                    prev_ts = self.fcip_doc['packet_timestamps'][prev_s2c_idx]
+                    delta = current_ts - prev_ts
+                    avg_s2c += delta
+                    prev_s2c_idx = idx
+            else:
+                #*** Don't know direction so ignore:
+                pass
+        #*** Return the largest interpacket delay overall:
+        return (avg_c2s+avg_s2c)/(count_s2c+count_c2s-2)
+
     def max_interpacket_interval(self):
         """
         Return the size of the largest inter-packet time interval
@@ -425,6 +474,19 @@ class Flow(object):
             return min_c2s
         else:
             return min_s2c
+
+    def delta_bytes(self):
+        """
+        get the total number of bytes in the flow
+        """
+        return sum(self.fcip_doc['packet_lengths'])
+
+    def duration(self):
+        """
+        return the duration of the flow
+        """
+        return (flow_data["latest_timestamp"] - flow_data["packet_timestamps"][0])
+        
 
     def set_suppress_flow(self):
         """
