@@ -37,6 +37,8 @@ class Classifier(object):
         Initialise the classifier
         """
         self.logger = logger
+	self.f = open('dpi.csv', 'w+')
+        self.f.write('before_time_features,before_time_classifier,after_time,result\n')
 
     def classifier(self, flow):
         """
@@ -65,23 +67,27 @@ class Classifier(object):
         #*** Dictionary to hold classification results:
         _results = {}
         http = ''
+	results = ''
 
         if not flow.finalised:
             #*** Do some classification:
             self.logger.debug("Checking packet")
-
+	    before_time_features = time.time()
             #*** Get the latest packet payload from the flow class:
             payload = flow.payload
 
             #*** Check if the payload is HTTP:
             if len(payload) > 0:
                 try:
+		    before_time_classify = time.time()
                     http = dpkt.http.Request(payload)
+		    after_time = time.time()
                 except:
                     #*** not HTTP so ignore...
                     pass
 
             if http:
+		results = http.uri
                 #*** Decide actions based on the URI:
                 if http.uri == _match_uri:
                     #*** Matched URI:
@@ -95,9 +101,12 @@ class Classifier(object):
                 self.logger.debug("Decided on results %s", _results)
 
             else:
+		results = 'unknown'
                 self.logger.debug("Not HTTP so ignoring")
 
             if flow.packet_count >= _max_packets:
                 flow.finalised = 1
+
+            self.f.write('{0},{1},{2},{3},{4:.3f},{5:.3f},{6:.3f},{7}\n'.format(flow.ip_src,flow.tcp_src,flow.ip_dst,flow.tcp_dst,before_time_features,before_time_classify,after_time,results))
 
         return _results

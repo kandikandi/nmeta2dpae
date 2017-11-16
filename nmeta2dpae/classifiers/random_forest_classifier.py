@@ -24,13 +24,12 @@ Call it from nmeta by specifying the name of the file (without the
 Classifiers are called per packet, so performance is important
 .
 """
-from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
 import time
 import sys
 import pickle
 from numpy import float32
 import numpy.core.multiarray as np_array
-
 
 class Classifier(object):
     """
@@ -41,8 +40,8 @@ class Classifier(object):
         Initialise the classifier
         """
         self.logger = logger
-        self.nn_classifier = pickle.load(open('trained_mlas/nn_4.p','rb'))
-        self.f = open('nn4_results.csv', 'w+')
+        self.rf_classifier = pickle.load(open('trained_mlas/rf_4.p','rb'))
+        self.f = open('rf4_results.csv', 'w+')
         self.f.write('ip_src,src_port,ip_dst,dst_port,before_time_features,before_time_classifier,after_time,result\n')
 
     def classifier(self, flow):
@@ -99,7 +98,7 @@ class Classifier(object):
             features = np_array.array([_duration_flow,_delta_bytes,_avg_interpacket_interval,_min_interpacket_interval,_max_interpacket_interval,_avg_packet_size,_min_packet_size,_max_packet_size, _packet_velocity,_byte_velocity]).astype(float32) 
             
             before_time_classify = time.time()
-            result = self.nn_classifier.predict(features.reshape(1,-1))[0]   
+            result = self.rf_classifier.predict(features.reshape(1,-1))[0]   
             after_time = time.time()
             self.f.write('{0},{1},{2},{3},{4:.3f},{5:.3f},{6:.3f},{7}\n'.format(flow.ip_src,flow.tcp_src,flow.ip_dst,flow.tcp_dst,before_time_features,before_time_classify,after_time,result))
             

@@ -271,6 +271,7 @@ class Flow(object):
                         'proto': proto,
                         'finalised': 0,
                         'packet_count': 1,
+                        'latest_timestamp' : pkt_receive_timestamp,
                         'packet_timestamps': [pkt_receive_timestamp,],
                         'tcp_flags': [tcp.flags,],
                         'packet_lengths': [self.packet_length,],
@@ -314,6 +315,7 @@ class Flow(object):
             #*** Read verified_direction status to variable:
             self.verified_direction = self.fcip_doc['verified_direction']
             #*** Add packet timestamps, tcp flags etc:
+            self.fcip_doc['latest_timestamp'] = pkt_receive_timestamp
             self.fcip_doc['packet_timestamps'].append(pkt_receive_timestamp)
             self.fcip_doc['tcp_flags'].append(tcp.flags)
             self.fcip_doc['packet_lengths'].append(self.packet_length)
@@ -350,7 +352,12 @@ class Flow(object):
         """
         Return the size of the smallest packet in the flow (in either direction)
         """
-        return sum(self.fcip_doc['packet_lengths'])/len(self.fcip_doc['packet_lengths'])
+        result = 0
+        try:
+            result = sum(self.fcip_doc['packet_lengths'])/float(len(self.fcip_doc['packet_lengths']))
+        except:
+            pass
+        return result
 
     def avg_interpacket_interval(self):
         """
@@ -387,7 +394,12 @@ class Flow(object):
                 #*** Don't know direction so ignore:
                 pass
         #*** Return the largest interpacket delay overall:
-        return (avg_c2s+avg_s2c)/(count_s2c+count_c2s-2)
+        result = 0
+        try:
+            result = (avg_c2s+avg_s2c)/float(count_s2c+count_c2s-2)
+        except:
+            pass
+        return result
 
     def max_interpacket_interval(self):
         """
@@ -485,7 +497,7 @@ class Flow(object):
         """
         return the duration of the flow
         """
-        return (flow_data["latest_timestamp"] - flow_data["packet_timestamps"][0])
+        return (self.fcip_doc["latest_timestamp"] - self.fcip_doc["packet_timestamps"][0])
         
 
     def set_suppress_flow(self):
